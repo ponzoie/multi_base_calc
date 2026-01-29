@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "crates/calc_core",
+]
+resolver = "2"

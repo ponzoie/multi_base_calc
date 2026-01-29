@@ -62,6 +62,8 @@ fn parse_literal(input: &str, bytes: &[u8], idx: &mut usize) -> CalcResult<i64> 
             let b = bytes[*idx];
             if b == b'0' || b == b'1' || b == b'_' {
                 *idx += 1;
+            } else if b.is_ascii_alphanumeric() {
+                return Err(CalcError::InvalidLiteral);
             } else {
                 break;
             }

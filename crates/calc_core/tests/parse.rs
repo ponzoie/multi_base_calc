@@ -14,3 +14,8 @@ fn parse_large_number() {
 fn parse_small_number() {
     assert!(parse("2") == Ok(2));
 }
+
+#[test]
+fn parse_binary_number() {
+    assert!(parse("0b0101") == Ok(5));
+}

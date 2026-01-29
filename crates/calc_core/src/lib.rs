@@ -55,23 +55,43 @@ fn parse_literal(input: &str, bytes: &[u8], idx: &mut usize) -> CalcResult<i64> 
         return Err(CalcError::InvalidLiteral);
     }
 
-    let start = *idx;
-    while *idx < bytes.len() {
-        let b = bytes[*idx];
-        if b.is_ascii_digit() || b == b'_' {
-            *idx += 1;
-        } else {
-            break;
+    let value = if bytes[*idx] == b'0' && bytes.get(*idx + 1) == Some(&b'b') {
+        *idx += 2;
+        let start = *idx;
+        while *idx < bytes.len() {
+            let b = bytes[*idx];
+            if b == b'0' || b == b'1' || b == b'_' {
+                *idx += 1;
+            } else {
+                break;
+            }
         }
-    }
 
-    if *idx == start {
-        let ch = input[*idx..].chars().next().unwrap_or('\0');
-        return Err(CalcError::InvalidToken(ch));
-    }
+        if *idx == start {
+            return Err(CalcError::InvalidLiteral);
+        }
 
-    let token = &input[start..*idx];
-    let value = parse_decimal(token)?;
+        let token = &input[start..*idx];
+        parse_binary(token)?
+    } else {
+        let start = *idx;
+        while *idx < bytes.len() {
+            let b = bytes[*idx];
+            if b.is_ascii_digit() || b == b'_' {
+                *idx += 1;
+            } else {
+                break;
+            }
+        }
+
+        if *idx == start {
+            let ch = input[*idx..].chars().next().unwrap_or('\0');
+            return Err(CalcError::InvalidToken(ch));
+        }
+
+        let token = &input[start..*idx];
+        parse_decimal(token)?
+    };
     if value > MAX_I32 {
         return Err(CalcError::LiteralOutOfRange);
     }
@@ -98,6 +118,45 @@ fn parse_decimal(token: &str) -> CalcResult<i64> {
 
         value = value
             .checked_mul(10)
+            .and_then(|v| v.checked_add(digit))
+            .ok_or(CalcError::LiteralOutOfRange)?;
+
+        if value > MAX_I32 {
+            return Err(CalcError::LiteralOutOfRange);
+        }
+    }
+
+    if !seen_digit || prev_underscore {
+        return Err(CalcError::InvalidLiteral);
+    }
+
+    Ok(value)
+}
+
+fn parse_binary(token: &str) -> CalcResult<i64> {
+    let mut value: i64 = 0;
+    let mut seen_digit = false;
+    let mut prev_underscore = false;
+
+    for ch in token.chars() {
+        if ch == '_' {
+            if !seen_digit || prev_underscore {
+                return Err(CalcError::InvalidLiteral);
+            }
+            prev_underscore = true;
+            continue;
+        }
+
+        let digit = match ch {
+            '0' => 0,
+            '1' => 1,
+            _ => return Err(CalcError::InvalidLiteral),
+        };
+        seen_digit = true;
+        prev_underscore = false;
+
+        value = value
+            .checked_mul(2)
             .and_then(|v| v.checked_add(digit))
             .ok_or(CalcError::LiteralOutOfRange)?;
 

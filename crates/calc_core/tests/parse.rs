@@ -59,3 +59,39 @@ fn parse_invalid_binary_literal_trailing_underscore() {
 fn parse_invalid_token() {
     assert!(parse("1a") == Err(CalcError::InvalidToken('a')));
 }
+
+#[test]
+fn parse_hex_number() {
+    assert!(parse("0x10") == Ok(16));
+}
+
+#[test]
+fn parse_hex_with_underscore() {
+    assert!(parse("0x1_FF") == Ok(511));
+}
+
+#[test]
+fn parse_invalid_hex_empty() {
+    assert!(parse("0x") == Err(CalcError::InvalidLiteral));
+}
+
+#[test]
+fn parse_invalid_hex_digit() {
+    assert!(parse("0x1G") == Err(CalcError::InvalidLiteral));
+}
+
+#[test]
+fn parse_invalid_hex_trailing_underscore() {
+    assert!(parse("0x1_") == Err(CalcError::InvalidLiteral));
+}
+
+#[test]
+fn parse_hex_literal_range_error() {
+    assert!(parse("0x1_0000_0000") == Err(CalcError::LiteralOutOfRange));
+}
+
+// 関係ない記号
+#[test]
+fn parse_hex_char_error() {
+    assert!(parse("0x0001_0-00") == Err(CalcError::InvalidLiteral));
+}

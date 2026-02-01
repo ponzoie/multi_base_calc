@@ -12,10 +12,16 @@ fn addition_multiple_with_spaces() {
 
 #[test]
 fn addition_literal_range_error() {
-    assert_eq!(eval_expression("2147483648"), Err(CalcError::LiteralOutOfRange));
+    assert_eq!(
+        eval_expression("2147483648"),
+        Err(CalcError::LiteralOutOfRange)
+    );
 }
 
 #[test]
 fn addition_result_range_error() {
-    assert_eq!(eval_expression("2147483647 + 1"), Err(CalcError::RangeError));
+    assert_eq!(
+        eval_expression("2147483647 + 1"),
+        Err(CalcError::RangeError)
+    );
 }

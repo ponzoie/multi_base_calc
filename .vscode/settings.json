@@ -1,10 +1,7 @@
 {
-  "editor.formatOnSave": true,
-  "[rust]": {
-    "editor.defaultFormatter": "rust-lang.rust-analyzer"
-  },
-  "rust-analyzer.rustfmt.overrideCommand": [
-    "cargo",
-    "fmt"
-  ]
+    "[rust]": {
+        "editor.defaultFormatter": "rust-lang.rust-analyzer",
+        "editor.formatOnSave": false
+    },
+    "rust-analyzer.rustfmt.enable": false
 }

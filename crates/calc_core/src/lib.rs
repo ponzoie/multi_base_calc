@@ -27,31 +27,103 @@ pub fn eval_expression(input: &str) -> CalcResult<i64> {
     let bytes = input.as_bytes();
     let mut idx = 0;
 
+    let value = parse_expression(input, bytes, &mut idx)?;
     skip_ws(bytes, &mut idx);
-    let mut acc = parse_literal(input, bytes, &mut idx)?;
+    if idx < bytes.len() {
+        let ch = input[idx..].chars().next().unwrap_or('\0');
+        return Err(CalcError::InvalidToken(ch));
+    }
+    Ok(value)
+}
+
+fn parse_expression(input: &str, bytes: &[u8], idx: &mut usize) -> CalcResult<i64> {
+    let mut acc = parse_term(input, bytes, idx)?;
     acc = check_range(acc)?;
 
     loop {
-        skip_ws(bytes, &mut idx);
-        if idx >= bytes.len() {
+        skip_ws(bytes, idx);
+        if *idx >= bytes.len() {
             break;
         }
 
-        match bytes[idx] {
+        match bytes[*idx] {
             b'+' => {
-                idx += 1;
-                let rhs = parse_literal(input, bytes, &mut idx)?;
+                *idx += 1;
+                ensure_operand_after_operator('+', bytes, idx)?;
+                let rhs = parse_term(input, bytes, idx)?;
                 let sum = acc.checked_add(rhs).ok_or(CalcError::RangeError)?;
                 acc = check_range(sum)?;
             }
-            _ => {
-                let ch = input[idx..].chars().next().unwrap_or('\0');
-                return Err(CalcError::InvalidToken(ch));
+            b'-' => {
+                *idx += 1;
+                ensure_operand_after_operator('-', bytes, idx)?;
+                let rhs = parse_term(input, bytes, idx)?;
+                let diff = acc.checked_sub(rhs).ok_or(CalcError::RangeError)?;
+                acc = check_range(diff)?;
+                if acc < 0 {
+                    return Err(CalcError::RangeError);
+                }
             }
+            _ => break,
         }
     }
 
     Ok(acc)
+}
+
+fn parse_term(input: &str, bytes: &[u8], idx: &mut usize) -> CalcResult<i64> {
+    let mut acc = parse_factor(input, bytes, idx)?;
+    acc = check_range(acc)?;
+
+    loop {
+        skip_ws(bytes, idx);
+        if *idx >= bytes.len() {
+            break;
+        }
+
+        match bytes[*idx] {
+            b'*' => {
+                *idx += 1;
+                ensure_operand_after_operator('*', bytes, idx)?;
+                let rhs = parse_factor(input, bytes, idx)?;
+                let product = acc.checked_mul(rhs).ok_or(CalcError::RangeError)?;
+                acc = check_range(product)?;
+            }
+            b'%' => {
+                *idx += 1;
+                ensure_operand_after_operator('%', bytes, idx)?;
+                let rhs = parse_factor(input, bytes, idx)?;
+                if rhs == 0 {
+                    return Err(CalcError::RangeError);
+                }
+                let rem = acc.rem_euclid(rhs);
+                acc = check_range(rem)?;
+            }
+            _ => break,
+        }
+    }
+
+    Ok(acc)
+}
+
+fn parse_factor(input: &str, bytes: &[u8], idx: &mut usize) -> CalcResult<i64> {
+    skip_ws(bytes, idx);
+    if *idx < bytes.len() && bytes[*idx] == b'-' {
+        *idx += 1;
+        ensure_operand_after_operator('-', bytes, idx)?;
+        let value = parse_factor(input, bytes, idx)?;
+        let negated = value.checked_neg().ok_or(CalcError::RangeError)?;
+        return check_range(negated);
+    }
+    parse_literal(input, bytes, idx)
+}
+
+fn ensure_operand_after_operator(op: char, bytes: &[u8], idx: &mut usize) -> CalcResult<()> {
+    skip_ws(bytes, idx);
+    if *idx >= bytes.len() {
+        return Err(CalcError::InvalidToken(op));
+    }
+    Ok(())
 }
 
 fn parse_literal(input: &str, bytes: &[u8], idx: &mut usize) -> CalcResult<i64> {

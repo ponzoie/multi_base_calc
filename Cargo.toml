@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "crates/calc_core",
+    "crates/calc_wasm",
 ]
 resolver = "2"

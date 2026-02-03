@@ -24,10 +24,15 @@ fn basic_remainder() {
     assert_eq!(eval_expression("5%3"), Ok(2));
 }
 
-// 減算の異常系
 #[test]
-fn subtraction_negative_result_error() {
-    assert_eq!(eval_expression("1-2"), Err(calc_core::CalcError::RangeError));
+fn remainder_negative_dividend() {
+    assert_eq!(eval_expression("-5%3"), Ok(1));
+}
+
+// 減算の負数結果
+#[test]
+fn subtraction_negative_result_ok() {
+    assert_eq!(eval_expression("1-2"), Ok(-1));
 }
 
 // 余りの0除算
@@ -185,4 +190,18 @@ fn unary_minus_in_subtraction() {
 #[test]
 fn unary_minus_in_multiplication() {
     assert_eq!(eval_expression("2*-3"), Ok(-6));
+}
+
+// 最小値境界
+#[test]
+fn min_i32_literal_ok() {
+    assert_eq!(eval_expression("-2147483648"), Ok(-2147483648));
+}
+
+#[test]
+fn min_i32_subtraction_range_error() {
+    assert_eq!(
+        eval_expression("-2147483648-1"),
+        Err(calc_core::CalcError::RangeError)
+    );
 }
